@@ -3,6 +3,9 @@
 // Secure middleman for your Word Story Generator.
 // Adds: model fallback + age-group usage logging.
 // ============================================================
+export const config = {
+  runtime: "nodejs"
+};
 
 module.exports = async (req, res) => {
   // Basic CORS
