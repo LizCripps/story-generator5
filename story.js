@@ -6,22 +6,21 @@
 // ============================================================
 
 export default async function handler(req, res) {
-  // Allow your HTML page to call this function
+  // Allow any website to call this function
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
 
   // Handle browser "pre-flight" check
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // Only allow POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Check the password sent from your HTML page
   const { words, sentenceCount, password } = req.body;
   const correctPassword = process.env.CLASSROOM_PASSWORD;
 
@@ -29,12 +28,10 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Incorrect password" });
   }
 
-  // Make sure words were sent
   if (!words || !Array.isArray(words) || words.length === 0) {
     return res.status(400).json({ error: "No words provided" });
   }
 
-  // Call the Anthropic API using your secret key
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
