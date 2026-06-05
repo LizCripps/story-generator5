@@ -5,14 +5,11 @@
 // You do NOT need to edit this file.
 // ============================================================
 
-export default async function handler(req, res) {
-  // Allow any website to call this function
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Max-Age", "86400");
 
-  // Handle browser "pre-flight" check
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -46,12 +43,8 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "user",
-            content: `You are a creative storyteller for a classroom. Write a short story that uses ALL of the following ${words.length} words naturally within it. The story must be exactly ${sentenceCount} sentences long. Make it imaginative, vivid, and engaging — suitable for a classroom vocabulary activity. Use each word at least once; the words don't need to appear in order.
-
-Words to include: ${words.join(", ")}
-
-Write only the story, no preamble or explanation.`,
-          },
+            content: `You are a creative storyteller for a classroom. Write a short story that uses ALL of the following ${words.length} words naturally within it. The story must be exactly ${sentenceCount} sentences long. Make it imaginative, vivid, and engaging — suitable for a classroom vocabulary activity. Use each word at least once; the words don't need to appear in order.\n\nWords to include: ${words.join(", ")}\n\nWrite only the story, no preamble or explanation.`
+          }
         ],
       }),
     });
@@ -67,4 +60,4 @@ Write only the story, no preamble or explanation.`,
   } catch (err) {
     return res.status(500).json({ error: "Server error: " + err.message });
   }
-}
+};
