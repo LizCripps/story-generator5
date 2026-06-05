@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
 
   const ageInstructions = {
     "under4":  "The reader is under 4 years old. Use extremely simple words (1-2 syllables), very short sentences, and a warm, gentle, playful tone. The story should feel like a picture book — simple animals, toys, or nature scenes. No conflict or scary elements.",
-    "5to8":    "The reader is 5 to 8 years old. Use simple, clear language a early-elementary child would understand. The story should be fun, imaginative, and slightly adventurous — like a children's chapter book. Avoid anything frightening or complex.",
+    "5to8":    "The reader is 5 to 8 years old. Use simple, clear language an early-elementary child would understand. The story should be fun, imaginative, and slightly adventurous — like a children's chapter book. Avoid anything frightening or complex.",
     "9to11":   "The reader is 9 to 11 years old. Use age-appropriate vocabulary for a middle-elementary student. The story can have light adventure, friendship themes, humour, and mild tension — nothing frightening or mature.",
     "12to14":  "The reader is 12 to 14 years old. Use vocabulary suitable for a middle school student. The story can explore themes like friendship, identity, light mystery, or adventure. Avoid adult themes, romance beyond a crush, or anything disturbing.",
     "15to17":  "The reader is 15 to 17 years old. Use natural teen-appropriate language. The story can explore more complex emotions, coming-of-age themes, or compelling scenarios. Keep it age-appropriate — no explicit content, graphic violence, or adult situations.",
@@ -42,7 +42,7 @@ module.exports = async (req, res) => {
       max_tokens: 1000,
       messages: [{
         role: "user",
-        content: `You are a creative storyteller writing for a classroom vocabulary activity. 
+        content: `You are a creative storyteller writing for a classroom vocabulary activity.
 
 AUDIENCE: ${agePrompt}
 
