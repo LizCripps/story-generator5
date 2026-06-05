@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Word Story Generator</title>
+  <!-- ============================================================
+    SETUP: Find the line below that says YOUR_VERCEL_URL and
+    replace it with your actual Vercel project URL.
+    Example: https://my-story-app.vercel.app
+  ============================================================ -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #FAF7F2;
+      --paper: #F3EDE3;
+      --ink: #1C1917;
+      --ink-light: #57534E;
+      --ink-faint: #A8A29E;
+      --accent: #C1440E;
+      --accent-soft: #FDEEE8;
+      --border: #E2D9CE;
+      --green: #166534;
+      --green-soft: #DCFCE7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── Login screen ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+    }
+    .login-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .login-box .book-icon { font-size: 36px; margin-bottom: 12px; }
+    .login-box h1 { font-family: 'Lora', serif; font-size: 22px; margin-bottom: 6px; }
+    .login-box p { font-size: 14px; color: var(--ink-light); margin-bottom: 24px; }
+    .login-box input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      margin-bottom: 12px;
+      background: var(--paper);
+      color: var(--ink);
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+    .login-box input:focus { outline: 2px solid var(--accent); }
+    .login-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .login-btn:hover { opacity: 0.88; }
+    .login-error { font-size: 13px; color: var(--accent); margin-top: 10px; display: none; }
+
+    /* ── App ── */
+    #app { display: none; }
+    .top-bar {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .top-bar h1 { font-family: 'Lora', serif; font-size: 18px; }
+    .top-bar .logout { font-size: 13px; color: var(--ink-faint); cursor: pointer; border: none; background: none; font-family: inherit; }
+    .top-bar .logout:hover { color: var(--ink-light); }
+
+    .main { max-width: 700px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Upload card ── */
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 12px;
+    }
+    .drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .drop-zone:hover { background: var(--paper); border-color: var(--ink-faint); }
+    .drop-icon { font-size: 30px; margin-bottom: 8px; }
+    .drop-text { font-size: 14px; color: var(--ink-light); }
+    .drop-sub { font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+    #file-input { display: none; }
+
+    .word-count-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 12px 0 8px;
+      font-size: 13px;
+      color: var(--ink-light);
+    }
+    .clear-btn { background: none; border: none; font-size: 12px; color: var(--ink-faint); cursor: pointer; font-family: inherit; }
+    .clear-btn:hover { color: var(--accent); }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: var(--ink-light);
+    }
+    .chip.used {
+      background: var(--accent-soft);
+      border-color: #F4A68A;
+      color: var(--accent);
+    }
+
+    /* ── Controls ── */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .seg-label { font-size: 13px; color: var(--ink-light); }
+    .seg {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .seg-btn {
+      padding: 7px 16px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--ink-light);
+      transition: all 0.15s;
+    }
+    .seg-btn.active {
+      background: var(--ink);
+      color: white;
+    }
+    .gen-btn {
+      margin-left: auto;
+      padding: 8px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gen-btn:hover:not(:disabled) { opacity: 0.88; }
+    .gen-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── Stories ── */
+    .story-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      animation: fadeUp 0.3s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .story-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .story-num {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+    .story-len {
+      font-size: 11px;
+      color: var(--ink-faint);
+      background: var(--paper);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .story-words { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+    .story-word {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .story-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .story-text {
+      font-family: 'Lora', serif;
+      font-size: 15.5px;
+      line-height: 1.8;
+      color: var(--ink);
+    }
+    .story-text.loading {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--ink-faint);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-bar {
+      font-size: 13px;
+      color: var(--ink-light);
+      margin-top: 10px;
+      min-height: 20px;
+    }
+    .status-bar.ok { color: var(--green); }
+    .status-bar.err { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="book-icon">📖</div>
+    <h1>Word Story Generator</h1>
+    <p>Enter the classroom password to continue.</p>
+    <input type="password" id="pw-input" placeholder="Password" />
+    <button class="login-btn" onclick="checkPassword()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     MAIN APP
+════════════════════════════════ -->
+<div id="app">
+  <div class="top-bar">
+    <h1>📖 Word Story Generator</h1>
+    <button class="logout" onclick="logout()">Log out</button>
+  </div>
+
+  <div class="main">
+
+    <!-- Upload -->
+    <div class="card">
+      <div class="card-title">Step 1 — Upload your word list</div>
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="drop-icon">📄</div>
+        <div class="drop-text">Click to choose your spreadsheet</div>
+        <div class="drop-sub">.xlsx, .xls, .csv, or .tsv · one word per row in column A</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv,.tsv" />
+      <div id="word-preview" style="display:none;">
+        <div class="word-count-row">
+          <span id="word-count-label"></span>
+          <button class="clear-btn" onclick="clearWords()">✕ Clear</button>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="card">
+      <div class="card-title">Step 2 — Choose story length & generate</div>
+      <div class="controls-row">
+        <span class="seg-label">Sentences:</span>
+        <div class="seg">
+          <button class="seg-btn active" id="btn-6" onclick="setLength(6)">6</button>
+          <button class="seg-btn" id="btn-10" onclick="setLength(10)">10</button>
+        </div>
+        <button class="gen-btn" id="gen-btn" onclick="generateStory()" disabled>
+          ✨ Generate story
+        </button>
+      </div>
+      <div class="status-bar" id="status-bar"></div>
+    </div>
+
+    <!-- Stories appear here -->
+    <div id="stories"></div>
+
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // CHANGE THIS to your actual Vercel URL after you deploy.
+  // Example: https://my-story-app.vercel.app
+  // ============================================================
+  const VERCEL_URL = "YOUR_VERCEL_URL";
+
+  // ── Password (checked against server, this is just the local copy) ──
+  let sessionPassword = "";
+
+  function checkPassword() {
+    const pw = document.getElementById("pw-input").value.trim();
+    if (!pw) return;
+    // We'll verify against the server on first real request.
+    // For now, store it and show the app.
+    sessionPassword = pw;
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app").style.display = "block";
+  }
+
+  document.getElementById("pw-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") checkPassword();
+  });
+
+  function logout() {
+    sessionPassword = "";
+    location.reload();
+  }
+
+  // ── File handling ──
+  let words = [];
+  let usedIndices = [];
+  let storyLength = 6;
+  let storyCount = 0;
+
+  const dropZone = document.getElementById("drop-zone");
+  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.style.background = "#F3EDE3"; });
+  dropZone.addEventListener("dragleave", () => { dropZone.style.background = ""; });
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.style.background = "";
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById("file-input").addEventListener("change", e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".tsv") || name.endsWith(".csv")) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const sep = name.endsWith(".tsv") ? "\t" : ",";
+        words = e.target.result.split("\n")
+          .map(r => r.split(sep)[0].trim())
+          .filter(w => w.length > 0);
+        usedIndices = [];
+        renderChips();
+      };
+      reader.readAsText(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const wb = XLSX.read(e.target.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        words = data.map(r => r[0]).filter(w => w != null && String(w).trim().length > 0).map(w => String(w).trim());
+        usedIndices = [];
+        renderChips();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  function renderChips() {
+    const preview = document.getElementById("word-preview");
+    const chips = document.getElementById("chips");
+    document.getElementById("word-count-label").textContent = `${words.length} words loaded`;
+    chips.innerHTML = words.slice(0, 60).map((w, i) =>
+      `<span class="chip ${usedIndices.includes(i) ? "used" : ""}">${w}</span>`
+    ).join("") + (words.length > 60 ? `<span class="chip">+${words.length - 60} more</span>` : "");
+    preview.style.display = "block";
+    document.getElementById("gen-btn").disabled = words.length < 10;
+  }
+
+  function clearWords() {
+    words = []; usedIndices = [];
+    document.getElementById("word-preview").style.display = "none";
+    document.getElementById("file-input").value = "";
+    document.getElementById("gen-btn").disabled = true;
+  }
+
+  function setLength(n) {
+    storyLength = n;
+    document.getElementById("btn-6").classList.toggle("active", n === 6);
+    document.getElementById("btn-10").classList.toggle("active", n === 10);
+  }
+
+  function pickNextWords() {
+    const available = words.map((_, i) => i).filter(i => !usedIndices.includes(i));
+    if (available.length < 10) { usedIndices = []; return words.slice(0, 10).map((_, i) => i); }
+    const picked = available.slice(0, 10);
+    usedIndices.push(...picked);
+    return picked;
+  }
+
+  async function generateStory() {
+    const btn = document.getElementById("gen-btn");
+    const status = document.getElementById("status-bar");
+    btn.disabled = true;
+    status.className = "status-bar";
+    status.textContent = "Generating your story…";
+
+    const indices = pickNextWords();
+    const batch = indices.map(i => words[i]);
+    storyCount++;
+    const id = storyCount;
+
+    // Add story card immediately with loading state
+    const container = document.getElementById("stories");
+    const card = document.createElement("div");
+    card.className = "story-card";
+    card.innerHTML = `
+      <div class="story-meta">
+        <span class="story-num">Story ${id}</span>
+        <span class="story-len">${storyLength} sentences</span>
+      </div>
+      <div class="story-words">${batch.map(w => `<span class="story-word">${w}</span>`).join("")}</div>
+      <hr class="story-divider" />
+      <div class="story-text loading" id="text-${id}">
+        <div class="spinner"></div> Writing your story…
+      </div>
+    `;
+    container.insertBefore(card, container.firstChild);
+
+    try {
+      const response = await fetch(`${VERCEL_URL}/api/story`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ words: batch, sentenceCount: storyLength, password: sessionPassword }),
+      });
+
+      const data = await response.json();
+
+      if (response.status === 401) {
+        document.getElementById(`text-${id}`).className = "story-text";
+        document.getElementById(`text-${id}`).textContent = "❌ Incorrect password.";
+        status.className = "status-bar err";
+        status.textContent = "Password was rejected. Please log out and try again.";
+        btn.disabled = false;
+        return;
+      }
+
+      if (!response.ok) throw new Error(data.error || "Unknown error");
+
+      document.getElementById(`text-${id}`).className = "story-text";
+      document.getElementById(`text-${id}`).textContent = data.story;
+
+      const remaining = words.length - usedIndices.length;
+      status.className = "status-bar ok";
+      status.textContent = remaining > 0
+        ? `✓ Story generated! ${remaining} words remaining.`
+        : "✓ All words used — will cycle from the beginning next time.";
+
+    } catch (err) {
+      document.getElementById(`text-${id}`).className = "story-text";
+      document.getElementById(`text-${id}`).textContent = "Something went wrong. Please try again.";
+      status.className = "status-bar err";
+      status.textContent = "Error: " + err.message;
+    }
+
+    renderChips();
+    btn.disabled = false;
+  }
+</script>
+</body>
+</html>
